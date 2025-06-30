@@ -35,4 +35,4 @@ intents = discord.Intents.default()
 
 class MyBot(commands.Bot):
     async def setup_hook(self):
-        self.loop.create_task(self.check_youtube
+        self.loop.create_task(self.check_youtube)
