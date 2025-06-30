@@ -24,7 +24,7 @@ def extract_video_id(entry):
     return urlparse.parse_qs(parsed_url.query).get('v', [None])[0]
 
 # Hardcode the last video ID here:
-last_video_id = "0wHaTHdWp7c"
+last_video_id = "HMT2N_lqPWs"
 intents = discord.Intents.default()
 
 class MyBot(commands.Bot):
