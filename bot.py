@@ -50,4 +50,10 @@ bot = MyBot(command_prefix="!", intents=intents)
 async def on_ready():
     print(f"✅ Bot is online! Logged in as {bot.user}")
 
+    # Set presence to online with an activity
+    await bot.change_presence(
+        status=discord.Status.online,
+        activity=discord.Game(name="Watching YouTube")
+    )
+
 bot.run(DISCORD_TOKEN)
