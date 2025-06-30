@@ -13,6 +13,12 @@ def save_last_video_id(video_id):
     with open("last_video_id.txt", "w") as f:
         f.write(video_id)
 
+def load_last_video_id():
+    if os.path.exists("last_video_id.txt"):
+        with open("last_video_id.txt", "r") as f:
+            return f.read().strip()
+    return None
+
 def extract_video_id(entry):
     # Try yt_videoid first
     video_id = getattr(entry, 'yt_videoid', None)
@@ -23,13 +29,18 @@ def extract_video_id(entry):
     parsed_url = urlparse.urlparse(video_url)
     return urlparse.parse_qs(parsed_url.query).get('v', [None])[0]
 
-# Hardcode the last video ID here:
-last_video_id = "HMT2N_lqPWs"
+# Load last video ID from file
+last_video_id = load_last_video_id() or "x63FXbvvsNM"
+
 intents = discord.Intents.default()
+intents.message_content = True  # Just in case you want to use it later
+
+bot = commands.Bot(command_prefix="!", intents=intents)
 
 class MyBot(commands.Bot):
     async def setup_hook(self):
         self.loop.create_task(self.check_youtube())
+        await self.tree.sync()  # Sync slash commands on startup
 
     async def check_youtube(self):
         global last_video_id
@@ -66,11 +77,14 @@ bot = MyBot(command_prefix="!", intents=intents)
 @bot.event
 async def on_ready():
     print(f"✅ Bot is online! Logged in as {bot.user}")
-
-    # Set presence to online with an activity
     await bot.change_presence(
         status=discord.Status.online,
         activity=discord.Game(name="Watching YouTube")
     )
+
+# ✅ Simple slash command for Active Developer Badge
+@bot.tree.command(name="ping", description="Replies with Pong!")
+async def ping(interaction: discord.Interaction):
+    await interaction.response.send_message("🏓 Pong!")
 
 bot.run(DISCORD_TOKEN)
