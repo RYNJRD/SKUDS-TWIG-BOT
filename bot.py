@@ -4,7 +4,6 @@ import feedparser
 import asyncio
 import os
 import urllib.parse as urlparse
-import random
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 YOUTUBE_FEED_URL = os.getenv("YOUTUBE_FEED_URL")
@@ -30,15 +29,18 @@ def extract_video_id(entry):
     parsed_url = urlparse.urlparse(video_url)
     return urlparse.parse_qs(parsed_url.query).get('v', [None])[0]
 
-last_video_id = load_last_video_id() or "x63FXbvvsNM"
+# Load last video ID from file or fallback to hardcoded
+last_video_id = load_last_video_id() or "HMT2N_lqPWs"
 
 intents = discord.Intents.default()
-intents.message_content = True
 
 class MyBot(commands.Bot):
+    def __init__(self):
+        super().__init__(command_prefix="!", intents=intents)
+
     async def setup_hook(self):
         self.loop.create_task(self.check_youtube())
-        await self.tree.sync()
+        await self.tree.sync()  # Sync slash commands on startup
 
     async def check_youtube(self):
         global last_video_id
@@ -48,6 +50,7 @@ class MyBot(commands.Bot):
         while not self.is_closed():
             try:
                 feed = feedparser.parse(YOUTUBE_FEED_URL)
+
                 if feed.entries:
                     latest_video = feed.entries[0]
                     video_id = extract_video_id(latest_video)
@@ -63,12 +66,13 @@ class MyBot(commands.Bot):
                             print("⚠️ Channel not found. Check DISCORD_CHANNEL_ID.")
                 else:
                     print("⚠️ No videos found in RSS feed.")
+
             except Exception as e:
                 print(f"Error checking YouTube feed: {e}")
 
             await asyncio.sleep(60)
 
-bot = MyBot(command_prefix="!", intents=intents)
+bot = MyBot()
 
 @bot.event
 async def on_ready():
@@ -78,21 +82,9 @@ async def on_ready():
         activity=discord.Game(name="Watching YouTube")
     )
 
+# Simple working slash command
 @bot.tree.command(name="hello", description="Say hello!")
 async def hello(interaction: discord.Interaction):
-    await interaction.response.send_message(f"Hello, {interaction.user.mention}!")
-
-rust_jokes = [
-    "Why don't Rust players ever get lost? Because they always have a compass!",
-    "I built a base so strong in Rust, even my friends couldn't get in!",
-    "Why did the Rust player bring a ladder? To get to the next level!",
-    "Rust players don’t rage quit — they just 'go offline' indefinitely.",
-    "Why do Rust players always carry a rock? Because you never know when you'll need to build a base!",
-]
-
-@bot.tree.command(name="rustjoke", description="Tell a Rust-related joke")
-async def rustjoke(interaction: discord.Interaction):
-    joke = random.choice(rust_jokes)
-    await interaction.response.send_message(f"😂 {joke}")
+    await interaction.response.send_message("👋 Hello!")
 
 bot.run(DISCORD_TOKEN)
