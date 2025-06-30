@@ -3,12 +3,28 @@ from discord.ext import commands
 import feedparser
 import asyncio
 import os
+import urllib.parse as urlparse
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 YOUTUBE_FEED_URL = os.getenv("YOUTUBE_FEED_URL")
 DISCORD_CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID"))
 
-last_video_id = None
+def save_last_video_id(video_id):
+    with open("last_video_id.txt", "w") as f:
+        f.write(video_id)
+
+def extract_video_id(entry):
+    # Try yt_videoid first
+    video_id = getattr(entry, 'yt_videoid', None)
+    if video_id:
+        return video_id
+    # Fallback: parse from URL
+    video_url = entry.link
+    parsed_url = urlparse.urlparse(video_url)
+    return urlparse.parse_qs(parsed_url.query).get('v', [None])[0]
+
+# Hardcode the last video ID here:
+last_video_id = "0wHaTHdWp7c"
 intents = discord.Intents.default()
 
 class MyBot(commands.Bot):
@@ -26,12 +42,13 @@ class MyBot(commands.Bot):
 
                 if feed.entries:
                     latest_video = feed.entries[0]
-                    video_id = latest_video.yt_videoid
+                    video_id = extract_video_id(latest_video)
                     video_url = latest_video.link
                     video_title = latest_video.title
 
-                    if video_id != last_video_id:
+                    if video_id and video_id != last_video_id:
                         last_video_id = video_id
+                        save_last_video_id(video_id)
                         if channel:
                             await channel.send(f"📢 **New video uploaded!**\n**{video_title}**\n{video_url}")
                         else:
