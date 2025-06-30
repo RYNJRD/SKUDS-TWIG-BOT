@@ -13,12 +13,6 @@ def save_last_video_id(video_id):
     with open("last_video_id.txt", "w") as f:
         f.write(video_id)
 
-def load_last_video_id():
-    if os.path.exists("last_video_id.txt"):
-        with open("last_video_id.txt", "r") as f:
-            return f.read().strip()
-    return None
-
 def extract_video_id(entry):
     # Try yt_videoid first
     video_id = getattr(entry, 'yt_videoid', None)
@@ -29,10 +23,54 @@ def extract_video_id(entry):
     parsed_url = urlparse.urlparse(video_url)
     return urlparse.parse_qs(parsed_url.query).get('v', [None])[0]
 
-# Load the last video ID from file, fallback to hardcoded if not present
-last_video_id = load_last_video_id() or "x63FXbvvsNM"
+# Hardcode the last video ID here:
+last_video_id = "0wHaTHdWp7c"
 intents = discord.Intents.default()
 
 class MyBot(commands.Bot):
     async def setup_hook(self):
-        self.loop.create_task(self.check_youtube)
+        self.loop.create_task(self.check_youtube())
+
+    async def check_youtube(self):
+        global last_video_id
+        await self.wait_until_ready()
+        channel = self.get_channel(DISCORD_CHANNEL_ID)
+
+        while not self.is_closed():
+            try:
+                feed = feedparser.parse(YOUTUBE_FEED_URL)
+
+                if feed.entries:
+                    latest_video = feed.entries[0]
+                    video_id = extract_video_id(latest_video)
+                    video_url = latest_video.link
+                    video_title = latest_video.title
+
+                    if video_id and video_id != last_video_id:
+                        last_video_id = video_id
+                        save_last_video_id(video_id)
+                        if channel:
+                            await channel.send(f"📢 **New video uploaded!**\n**{video_title}**\n{video_url}")
+                        else:
+                            print("⚠️ Channel not found. Check DISCORD_CHANNEL_ID.")
+                else:
+                    print("⚠️ No videos found in RSS feed.")
+
+            except Exception as e:
+                print(f"Error checking YouTube feed: {e}")
+
+            await asyncio.sleep(60)
+
+bot = MyBot(command_prefix="!", intents=intents)
+
+@bot.event
+async def on_ready():
+    print(f"✅ Bot is online! Logged in as {bot.user}")
+
+    # Set presence to online with an activity
+    await bot.change_presence(
+        status=discord.Status.online,
+        activity=discord.Game(name="Watching YouTube")
+    )
+
+bot.run(DISCORD_TOKEN)
