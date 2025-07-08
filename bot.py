@@ -61,7 +61,7 @@ class MyBot(commands.Bot):
                         last_video_id = video_id
                         save_last_video_id(video_id)
                         if channel:
-                            await channel.send(f"📢 **New video uploaded!**\n**{video_title}**\n{video_url}")
+                            await channel.send((f"@everyone 📢 **New video uploaded!**\n**{video_title}**\n{video_url}")
                         else:
                             print("⚠️ Channel not found. Check DISCORD_CHANNEL_ID.")
                 else:
