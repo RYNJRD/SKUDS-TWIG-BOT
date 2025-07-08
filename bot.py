@@ -30,7 +30,7 @@ def extract_video_id(entry):
     return urlparse.parse_qs(parsed_url.query).get('v', [None])[0]
 
 # Load last video ID from file or fallback to hardcoded
-last_video_id = load_last_video_id() or "0wHaTHdWp7c"
+last_video_id = load_last_video_id() or "Ii_YhgiT-oM"
 
 intents = discord.Intents.default()
 
